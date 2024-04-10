@@ -1,0 +1,31 @@
+import telebot
+from openai import OpenAI
+
+# Инициализация клиента API OpenAI с вашим API ключом
+client = OpenAI(
+    api_key="API_KEY",
+    base_url="https://api.proxyapi.ru/openai/v1",
+)
+
+bot = telebot.TeleBot('BOT_KEY')
+
+# Список для хранения истории разговора
+conversation_history = []  # Исправлено: строка была прикреплена к комментарию
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    user_input = message.text  # Добавление ввода пользователя в историю разговора
+    conversation_history.append({"role": "user", "content": user_input})
+    # Отправка запроса в нейронную сеть
+    chat_completion = client.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        messages=conversation_history
+    )
+    # Извлечение и отправка ответа нейронной сети
+    ai_response_content = chat_completion.choices[0].message.content
+    bot.reply_to(message, ai_response_content)
+    # Добавление ответа нейронной сети в историю разговора
+    conversation_history.append({"role": "system", "content": ai_response_content})
+
+# Запускаем бота
+bot.polling(none_stop=True)
